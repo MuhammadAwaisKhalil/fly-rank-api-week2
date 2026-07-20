@@ -25,15 +25,15 @@ tasks = [{"id":100, "title":"Reading","Done":False},
 # def get_all_tasks():
 #     return tasks
 
-# @app.get('/tasks/{id}')
-# def get_specific_task(id: int):
-#     for task in tasks:
-#         if task['id']==id:
-#             return task
-#     return JSONResponse(
-#         status_code=404,
-#         content={"error":"Task {id} not found!"}
-#     )
+@app.get('/tasks/{id}')
+def get_specific_task(id: int):
+    for task in tasks:
+        if task['id']==id:
+            return task
+    return JSONResponse(
+        status_code=404,
+        content={"error":"Task {id} not found!"}
+    )
 
 @app.post("/tasks")
 def add_new_task(task: dict= Body(default={})):
