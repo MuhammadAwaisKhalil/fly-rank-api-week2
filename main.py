@@ -25,15 +25,15 @@ tasks = [{"id":100, "title":"Reading","Done":False},
 # def get_all_tasks():
 #     return tasks
 
-@app.get('/tasks/{id}')
-def get_specific_task(id: int):
-    for task in tasks:
-        if task['id']==id:
-            return task
-    return JSONResponse(
-        status_code=404,
-        content={"error":"Task {id} not found!"}
-    )
+# @app.get('/tasks/{id}')
+# def get_specific_task(id: int):
+#     for task in tasks:
+#         if task['id']==id:
+#             return task
+#     return JSONResponse(
+#         status_code=404,
+#         content={"error":"Task {id} not found!"}
+#     )
 
 @app.post("/tasks")
 def add_new_task(task: dict= Body(default={})):
@@ -49,7 +49,7 @@ def add_new_task(task: dict= Body(default={})):
     new_task = {
         'id':next_id,
         'title':title,
-        'done':False
+        'Done':False
     }
     tasks.append(new_task)
 
@@ -57,3 +57,44 @@ def add_new_task(task: dict= Body(default={})):
         status_code=status.HTTP_201_CREATED,
         content=new_task
     )
+
+@app.put('/tasks/{id}')
+def update_task(id:int, task:dict=Body(default={})):
+    if "title" not in task and "Done" not in task:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'error':'Must provide a \'title\' or \'Done\' status'}
+        )
+    
+    if "title" in task and (task["title"] is None or str(task["title"]).strip() == ""):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'error':'Task cannot be empty'}
+        )
+    
+    for t in tasks:
+        if t['id']==id:
+            if "title" in task:
+                t['title']=task['title']
+            if "Done" in task:
+                t['Done']=task['Done']
+            
+            return t
+    
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={'error':f'Task {id} not found'}
+    )
+
+@app.delete('/tasks/{id}')
+def delete_task(id:int):
+    for task in tasks:
+        if task['id']==id:
+            tasks.remove(task)
+
+            return
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={'error':f'Task {id} not found'}
+    )
+
