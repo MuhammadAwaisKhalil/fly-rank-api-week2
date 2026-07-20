@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, status, Body
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
@@ -20,9 +20,10 @@ tasks = [{"id":100, "title":"Reading","Done":False},
          {"id":101, "title":"Coding","Done":True},
          {"id":102, "title":"Writing","Done":False}]
 
-@app.get('/tasks')
-def get_all_tasks():
-    return tasks
+#Stage 2
+# @app.get('/tasks')
+# def get_all_tasks():
+#     return tasks
 
 @app.get('/tasks/{id}')
 def get_specific_task(id: int):
@@ -32,4 +33,27 @@ def get_specific_task(id: int):
     return JSONResponse(
         status_code=404,
         content={"error":"Task {id} not found!"}
+    )
+
+@app.post("/tasks")
+def add_new_task(task: dict= Body(default={})):
+    title = task.get('title')
+
+    if not title or title.strip()=='':
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'error':'title is missing'}
+        )
+    
+    next_id = max((t['id'] for t in tasks), default=0)+1
+    new_task = {
+        'id':next_id,
+        'title':title,
+        'done':False
+    }
+    tasks.append(new_task)
+
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content=new_task
     )
