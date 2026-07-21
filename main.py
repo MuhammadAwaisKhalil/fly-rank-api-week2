@@ -96,18 +96,18 @@ def add_new_task(task: dict= Body(default={})):
             content={'error':'title is missing'}
         )
     
-    next_id = max((t['id'] for t in tasks), default=0)+1
-    new_task = {
-        'id':next_id,
-        'title':title,
-        'Done':False
-    }
-    tasks.append(new_task)
+    # next_id = max((t['id'] for t in ), default=0)+1
+    # new_task = {
+    #     'id':next_id,
+    #     'title':title,
+    #     'Done':False
+    # }
+    
 
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content=new_task
-    )
+    # return JSONResponse(
+    #     status_code=status.HTTP_201_CREATED,
+    #     content=new_task
+    # )
 
 @app.put('/tasks/{id}')
 def update_task(id:int, task:dict=Body(default={})):
@@ -123,27 +123,27 @@ def update_task(id:int, task:dict=Body(default={})):
             content={'error':'Task cannot be empty'}
         )
     
-    for t in tasks:
-        if t['id']==id:
-            if "title" in task:
-                t['title']=task['title']
-            if "Done" in task:
-                t['Done']=task['Done']
+    # for t in tasks:
+    #     if t['id']==id:
+    #         if "title" in task:
+    #             t['title']=task['title']
+    #         if "Done" in task:
+    #             t['Done']=task['Done']
             
-            return t
+    #         return t
     
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content={'error':f'Task {id} not found'}
     )
 
-@app.delete('/tasks/{id}')
-def delete_task(id:int):
-    for task in tasks:
-        if task['id']==id:
-            tasks.remove(task)
+# @app.delete('/tasks/{id}')
+# def delete_task(id:int):
+#     for task in tasks:
+#         if task['id']==id:
+#             tasks.remove(task)
 
-            return
+#             return
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content={'error':f'Task {id} not found'}
