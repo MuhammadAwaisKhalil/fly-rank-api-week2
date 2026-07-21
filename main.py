@@ -44,20 +44,47 @@ def api_desc():
 def get_health():
     return {"status":"ok"}
 
-tasks = [{"id":100, "title":"Reading","Done":False},
-         {"id":101, "title":"Coding","Done":True},
-         {"id":102, "title":"Writing","Done":False}]
+# tasks = [{"id":100, "title":"Reading","Done":False},
+#          {"id":101, "title":"Coding","Done":True},
+#          {"id":102, "title":"Writing","Done":False}]
 
+
+@app.get('/tasks')
+def get_all_tasks():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM tasks')
+    rows = cursor.fetchall()
+
+    tasks=[]
+    for row in rows:
+        tasks.append({
+            "id":row["id"],
+            "title":row["title"],
+            "done":bool(row["done"])
+        })
+    return tasks
 
 @app.get('/tasks/{id}')
 def get_specific_task(id: int):
-    for task in tasks:
-        if task['id']==id:
-            return task
-    return JSONResponse(
-        status_code=404,
-        content={"error":"Task {id} not found!"}
-    )
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", id)
+
+    row = cursor.fetchone()
+
+    conn.close()
+
+    if row is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error":"Task {id} not found!"}
+        )
+    return {"id":row["id"],
+            "title":row["title"],
+            "done":bool(row["done"])}
+
 
 @app.post("/tasks")
 def add_new_task(task: dict= Body(default={})):
