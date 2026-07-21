@@ -29,7 +29,7 @@ def setup_db():
         cursor.execute("INSERT INTO tasks(title, done) VALUES ('Coding', 1)")
         cursor.execute("INSERT INTO tasks(title, done) VALUES ('Writing', 0)")
     conn.commit()
-    cursor.close()
+    conn.close()
 
 
 @app.get('/')
@@ -75,7 +75,7 @@ def get_specific_task(id: int):
     row = cursor.fetchone()
     conn.commit()
 
-    cursor.close()
+    conn.close()
 
     if row is None:
         return JSONResponse(
@@ -101,7 +101,7 @@ def add_new_task(title:str, done:bool):
     cursor = conn.cursor()
     cursor.execute("INSERT INTO tasks(title, done) VALUES(?, ?)",(title, done))
     conn.commit()
-    cursor.close()
+    conn.close()
 
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
@@ -109,34 +109,72 @@ def add_new_task(title:str, done:bool):
     )
 
 @app.put('/tasks/{id}')
-def update_task(id:int, task:dict=Body(default={})):
-    if "title" not in task and "Done" not in task:
+def update_task(id: int, task: dict = Body(default={})):
+    
+    if "title" not in task and "done" not in task:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={'error':'Must provide a \'title\' or \'Done\' status'}
+            content={'error': "Must provide a 'title' or 'done' status"}
         )
     
     if "title" in task and (task["title"] is None or str(task["title"]).strip() == ""):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={'error':'Task cannot be empty'}
+            content={'error': "Task cannot be empty"}
         )
     
-   
+    conn = get_db()
+    cursor = conn.cursor()
+
     
-    return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content={'error':f'Task {id} not found'}
-    )
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    existing_task = cursor.fetchone()
+    
+    if existing_task is None:
+        conn.close()
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': f'Task {id} not found'}
+        )
 
-# @app.delete('/tasks/{id}')
-# def delete_task(id:int):
-#     for task in tasks:
-#         if task['id']==id:
-#             tasks.remove(task)
+    
+    if "title" in task and "done" in task:
+        cursor.execute("UPDATE tasks SET title = ?, done = ? WHERE id = ?", (task["title"], task["done"], id))
+    elif "title" in task:
+        cursor.execute("UPDATE tasks SET title = ? WHERE id = ?", (task["title"], id))
+    elif "done" in task:
+        cursor.execute("UPDATE tasks SET done = ? WHERE id = ?", (task["done"], id))
+    
+    
+    conn.commit()
 
-#             return
-    return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content={'error':f'Task {id} not found'}
-    )
+   
+    cursor.execute("SELECT id, title, done FROM tasks WHERE id = ?", (id,))
+    updated_row = cursor.fetchone()
+    conn.close()
+
+    
+    return {
+        "id": updated_row["id"],
+        "title": updated_row["title"],
+        "done": bool(updated_row["done"])
+    }
+
+
+@app.delete('/tasks/{id}')
+def delete_task(id:int):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tasks WHERE id = ?",id)
+
+    row = cursor.fetchone()
+    if row is None:
+        conn.close()
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error':f'Task {id} not found'}
+        )
+    cursor.execute("DELETE FROM tasks WHERE id = ?",id)
+    conn.commit()
+    conn.close()
+    return
