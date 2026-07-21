@@ -73,8 +73,9 @@ def get_specific_task(id: int):
     cursor.execute("SELECT * FROM tasks WHERE id = ?", id)
 
     row = cursor.fetchone()
+    conn.commit()
 
-    conn.close()
+    cursor.close()
 
     if row is None:
         return JSONResponse(
@@ -87,8 +88,8 @@ def get_specific_task(id: int):
 
 
 @app.post("/tasks")
-def add_new_task(task: dict= Body(default={})):
-    title = task.get('title')
+def add_new_task(title:str, done:bool):
+    
 
     if not title or title.strip()=='':
         return JSONResponse(
@@ -96,18 +97,16 @@ def add_new_task(task: dict= Body(default={})):
             content={'error':'title is missing'}
         )
     
-    # next_id = max((t['id'] for t in ), default=0)+1
-    # new_task = {
-    #     'id':next_id,
-    #     'title':title,
-    #     'Done':False
-    # }
-    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO tasks(title, done) VALUES(?, ?)",(title, done))
+    conn.commit()
+    cursor.close()
 
-    # return JSONResponse(
-    #     status_code=status.HTTP_201_CREATED,
-    #     content=new_task
-    # )
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={"title":title,"done":done}
+    )
 
 @app.put('/tasks/{id}')
 def update_task(id:int, task:dict=Body(default={})):
@@ -123,14 +122,7 @@ def update_task(id:int, task:dict=Body(default={})):
             content={'error':'Task cannot be empty'}
         )
     
-    # for t in tasks:
-    #     if t['id']==id:
-    #         if "title" in task:
-    #             t['title']=task['title']
-    #         if "Done" in task:
-    #             t['Done']=task['Done']
-            
-    #         return t
+   
     
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
